@@ -1,0 +1,67 @@
+# Caddy configuration for audio hosting app
+
+# Global options
+{
+    auto_https disable  # Disable for development; enable for production
+}
+
+# Main domain - serves the Next.js frontend
+localhost {
+
+    # Gzip compression
+    encode gzip
+
+    # Security headers
+    header {
+        Access-Control-Allow-Origin http://localhost
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        Access-Control-Allow-Credentials true
+        # Security headers
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # Remove server header
+        -Server
+    }
+
+    # API routes - proxy to microservices
+    handle_path /api/users/* {
+        uri strip_prefix /api/users
+        reverse_proxy user-service:8000
+    }
+
+    handle_path /api/audio/* {
+        uri strip_prefix /api/audio
+        reverse_proxy audio-service:8000
+    }
+
+    # Static file serving for uploaded audio files
+    handle_path /uploads/* {
+        root * /app/uploads
+        file_server
+    }
+
+    # Health check endpoints
+    handle_path /health/users {
+        reverse_proxy user-service:3001/health
+    }
+
+    handle_path /health/audio {
+        reverse_proxy audio-service:3002/health
+    }
+
+    # Serve Next.js app
+    reverse_proxy frontend:3000
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+}
