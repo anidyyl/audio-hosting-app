@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
 
 // Load environment variables
 dotenv.config();
@@ -16,22 +17,32 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
-
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', service: 'user-service' });
 });
 
-// Routes will be added here
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+
+// Root route
 app.get('/', (req, res) => {
-  res.json({ message: 'User Service API' });
+  res.json({
+    message: 'User Service API',
+    version: '1.0.0',
+    endpoints: {
+      auth: {
+        'POST /auth/login': 'User login - returns JWT'
+      },
+      users: {
+        'GET /users': 'Get all users (admin only)',
+        'POST /users': 'Create new user (admin only)',
+        'PATCH /users/:id': 'Update user password (users) or password/user_type (admins)',
+        'DELETE /users/:id': 'Delete user (admin only)'
+      }
+    }
+  });
 });
 
 // Error handling middleware
