@@ -20,15 +20,28 @@ localhost:80 {
         -Server
     }
 
-    # API routes - proxy to microservices
-    handle_path /api/users/* {
-        uri strip_prefix /api/users
-        reverse_proxy user-service:8000
+    # Health check endpoints
+    handle_path /health/users {
+        rewrite * /health
+        reverse_proxy user-service:8001
     }
 
-    handle_path /api/audio/* {
-        uri strip_prefix /api/audio
-        reverse_proxy audio-service:8000
+    handle_path /health/audio {
+        rewrite * /health
+        reverse_proxy audio-service:8002
+    }
+
+    # API routes - proxy to microservices
+    handle /api/auth/* {
+        reverse_proxy user-service:8001
+    }
+ 
+    handle /api/users/* {
+        reverse_proxy user-service:8001
+    }
+
+    handle /api/audio/* {
+        reverse_proxy audio-service:8002
     }
 
     # Static file serving for uploaded audio files
@@ -37,16 +50,7 @@ localhost:80 {
         file_server
     }
 
-    # Health check endpoints
-    handle_path /health/users {
-        reverse_proxy user-service:3001/health
-    }
-
-    handle_path /health/audio {
-        reverse_proxy audio-service:3002/health
-    }
-
-    # Serve Next.js app
+    # Serve Next.js app (catch-all)
     reverse_proxy frontend:3000
 
     # Logging
