@@ -26,25 +26,6 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({
-    message: 'User Service API',
-    version: '1.0.0',
-    endpoints: {
-      auth: {
-        'POST /auth/login': 'User login - returns JWT'
-      },
-      users: {
-        'GET /users': 'Get all users (admin only)',
-        'POST /users': 'Create new user (admin only)',
-        'PATCH /users/:id': 'Update user password (users) or password/user_type (admins)',
-        'DELETE /users/:id': 'Delete user (admin only)'
-      }
-    }
-  });
-});
-
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
