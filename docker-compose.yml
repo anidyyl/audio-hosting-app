@@ -45,7 +45,7 @@ services:
     volumes:
       - ./backend/user-service:/app
       - /app/node_modules
-    command: npm run prisma:setup:with-seed && npm run dev
+    command: sh -c "npm run prisma:setup:with-seed && npm run dev"
 
   # Audio Service
   audio-service:
@@ -67,7 +67,7 @@ services:
       - ./backend/audio-service:/app
       - /app/node_modules
       - uploads_data:/app/uploads
-    command: npm run prisma:setup && npm run dev
+    command: sh -c "npm run prisma:setup && npm run dev"
 
   # Next.js Frontend
   frontend:
