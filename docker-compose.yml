@@ -2,16 +2,13 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: audio-hosting-postgres
+    container_name: postgre
     environment:
       POSTGRES_DB: audio_hosting_app
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/schemas:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -21,9 +18,7 @@ services:
   # Redis Cache
   redis:
     image: redis:8-alpine
-    container_name: audio-hosting-redis
-    ports:
-      - "6379:6379"
+    container_name: redis
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,15 +30,13 @@ services:
   # User Service
   user-service:
     build: ./backend/user-service
-    container_name: audio-hosting-user-service
+    container_name: user-service
     environment:
       - NODE_ENV=development
-      - PORT=3001
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/audio_hosting_app?schema=public
+      - PORT=8001
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/audio_hosting_app?schema=user_service
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-    ports:
-      - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,21 +45,19 @@ services:
     volumes:
       - ./backend/user-service:/app
       - /app/node_modules
-    command: npm run dev
+    command: npm run prisma:setup:with-seed && npm run dev
 
   # Audio Service
   audio-service:
     build: ./backend/audio-service
-    container_name: audio-hosting-audio-service
+    container_name: audio-service
     environment:
       - NODE_ENV=development
-      - PORT=3002
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/audio_hosting_app?schema=public
+      - PORT=8002
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/audio_hosting_app?schema=audio_service
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
       - UPLOAD_DIR=/app/uploads
-    ports:
-      - "3002:3002"
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,18 +67,16 @@ services:
       - ./backend/audio-service:/app
       - /app/node_modules
       - uploads_data:/app/uploads
-    command: npm run dev
+    command: npm run prisma:setup && npm run dev
 
   # Next.js Frontend
   frontend:
     build: ./frontend
-    container_name: audio-hosting-frontend
+    container_name: frontend
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_USER_SERVICE_URL=${NEXT_PUBLIC_USER_SERVICE_URL}
       - NEXT_PUBLIC_AUDIO_SERVICE_URL=${NEXT_PUBLIC_AUDIO_SERVICE_URL}
-    ports:
-      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -97,7 +86,7 @@ services:
   # Caddy Reverse Proxy
   caddy:
     image: caddy:2-alpine
-    container_name: audio-hosting-caddy
+    container_name: caddy
     ports:
       - "80:80"
       - "443:443"
@@ -110,6 +99,16 @@ services:
       - frontend
       - user-service
       - audio-service
+
+  # web-based database management tool. For development purposes.
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
 
 volumes:
   postgres_data:

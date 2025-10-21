@@ -1,16 +1,17 @@
 # Dockerfile for Audio Service
 FROM node:22-alpine
 
+# Install dependencies
+RUN apk add --no-cache libc6-compat curl openssl
+
 # Set working directory
 WORKDIR /app
 
 # Install dependencies first (for better caching)
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
 
-# Copy Prisma schema and generate client
-COPY prisma ./prisma/
-RUN npx prisma generate
+# Install all dependencies (including dev dependencies)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -19,7 +20,10 @@ COPY . .
 RUN mkdir -p uploads
 
 # Expose port
-EXPOSE 3002
+EXPOSE 8002
+
+# Set environment
+ENV NODE_ENV=development
 
 # Default command
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

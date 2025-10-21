@@ -1,12 +1,5 @@
-# Caddy configuration for audio hosting app
-
-# Global options
-{
-    auto_https disable  # Disable for development; enable for production
-}
-
 # Main domain - serves the Next.js frontend
-localhost {
+localhost:80 {
 
     # Gzip compression
     encode gzip

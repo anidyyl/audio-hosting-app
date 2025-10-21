@@ -1,24 +1,24 @@
 {
   "name": "user-service",
   "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
+  "description": "User service for audio hosting app",
+  "main": "dist/server.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "scripts": {
     "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:push": "prisma db push",
-    "prisma:studio": "prisma studio"
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:setup": "npx prisma migrate deploy && npx prisma generate",
+    "prisma:setup:with-seed": "npx prisma migrate deploy && npx prisma generate && npx prisma db seed",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "bcryptjs": "^3.0.2",
@@ -30,7 +30,6 @@
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
-    "prisma": "^6.17.1",
     "redis": "^5.8.3"
   },
   "devDependencies": {
@@ -41,6 +40,7 @@
     "@types/node": "^24.7.2",
     "@types/pg": "^8.15.5",
     "nodemon": "^3.1.10",
+    "prisma": "^6.17.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

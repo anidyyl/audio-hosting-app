@@ -13,67 +13,16 @@ datasource db {
 model User {
   id            Int      @id @default(autoincrement())
   username      String   @unique @db.VarChar(50)
-  email         String   @unique @db.VarChar(255)
   password_hash String   @db.VarChar(255)
-  first_name    String?  @db.VarChar(100)
-  last_name     String?  @db.VarChar(100)
+  user_type     UserType @default(USER)
   created_at    DateTime @default(now()) @db.Timestamp(6)
   updated_at    DateTime @default(now()) @updatedAt @db.Timestamp(6)
   last_login_at DateTime? @db.Timestamp(6)
-  is_active     Boolean  @default(true)
-  email_verified Boolean @default(false)
-
-  // Relations
-  audio_files UserAudioFile[]
-  shares       AudioShare[]
 
   @@map("users")
 }
 
-model UserAudioFile {
-  id           Int      @id @default(autoincrement())
-  user_id      Int
-  filename     String   @db.VarChar(255)
-  original_filename String @db.VarChar(255)
-  file_path    String   @db.VarChar(500)
-  file_size    BigInt
-  mime_type    String   @db.VarChar(100)
-  duration_seconds Int?
-  bitrate      Int?
-  sample_rate  Int?
-  title        String?  @db.VarChar(255)
-  artist       String?  @db.VarChar(255)
-  album        String?  @db.VarChar(255)
-  genre        String?  @db.VarChar(100)
-  year         Int?
-  description  String?  @db.Text
-  tags         String[] @default([])
-  is_public    Boolean  @default(false)
-  created_at   DateTime @default(now()) @db.Timestamp(6)
-  updated_at   DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  uploaded_at  DateTime @default(now()) @db.Timestamp(6)
-  last_accessed_at DateTime? @db.Timestamp(6)
-
-  // Relations
-  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  shares       AudioShare[]
-
-  @@map("audio_files")
-}
-
-model AudioShare {
-  id             Int      @id @default(autoincrement())
-  audio_file_id  Int
-  share_token    String   @unique @db.VarChar(255)
-  expires_at     DateTime? @db.Timestamp(6)
-  max_downloads  Int?
-  download_count Int      @default(0)
-  created_at     DateTime @default(now()) @db.Timestamp(6)
-  created_by     Int
-
-  // Relations
-  audio_file     UserAudioFile @relation(fields: [audio_file_id], references: [id], onDelete: Cascade)
-  creator        User          @relation(fields: [created_by], references: [id], onDelete: Cascade)
-
-  @@map("audio_shares")
+enum UserType {
+  USER
+  ADMIN
 }
