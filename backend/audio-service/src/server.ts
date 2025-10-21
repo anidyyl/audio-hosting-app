@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import audioRoutes from './routes/audio';
 
 // Load environment variables
 dotenv.config();
@@ -20,10 +21,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', service: 'audio-service' });
 });
 
-// Routes will be added here
-app.get('/', (req, res) => {
-  res.json({ message: 'Audio Service API' });
-});
+// Routes
+app.use('/api/audio', audioRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
