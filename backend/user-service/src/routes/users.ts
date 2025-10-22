@@ -126,6 +126,16 @@ router.patch('/:id', authenticateToken, validateUserUpdate, async (req, res) => 
     }
 
     const { password, user_type } = req.body;
+
+    // Prevent admin from changing their own user_type if they are the last admin
+    if (userId === req.user!.id && user_type !== undefined && req.user!.user_type === UserType.ADMIN) {
+      const totalAdmins = await prisma.user.count({
+        where: { user_type: UserType.ADMIN }
+      });
+      if (totalAdmins <= 1) {
+        return res.status(400).json({ error: 'Cannot change user type: you are the last admin' });
+      }
+    }
     const updateData: any = {};
 
     // Hash new password if provided (this will always be present for regular users due to validation)
@@ -180,9 +190,12 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Prevent admin from deleting themselves
+    // Prevent admin from deleting themselves if they are the last user
     if (userId === req.user!.id) {
-      return res.status(400).json({ error: 'You cannot delete your own account' });
+      const totalUsers = await prisma.user.count();
+      if (totalUsers <= 1) {
+        return res.status(400).json({ error: 'Cannot delete the last user' });
+      }
     }
 
     // Delete user
