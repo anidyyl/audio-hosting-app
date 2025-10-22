@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,6 +10,15 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  // Check if user is already logged in and redirect to dashboard
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // User has a token, redirect to dashboard
+      router.push('/dashboard');
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +41,19 @@ export default function LoginPage() {
         if (data.token) {
           localStorage.setItem('token', data.token);
         }
+        // Save the username for the user avatar
+        if (data.user) {
+          if (data.user.username) { 
+            localStorage.setItem('username', data.user.username);
+          }
+          if (data.user.user_type) {
+            localStorage.setItem('userType', data.user.user_type);
+          }
+          if (data.user.id) {
+            localStorage.setItem('userId', data.user.id);
+          }
+        }
+
         // Redirect to dashboard after successful login
         router.push('/dashboard');
       } else {

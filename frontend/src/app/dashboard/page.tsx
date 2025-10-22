@@ -24,11 +24,32 @@ export default function DashboardPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [username, setUsername] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     fetchAudioFiles();
+    // Load username from localStorage
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
   }, []);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const fetchAudioFiles = async () => {
     try {
@@ -189,15 +210,46 @@ export default function DashboardPage() {
               >
                 Upload Audio
               </button>
-              <button 
-                onClick={() => {
-                  localStorage.removeItem('token');
-                  router.push('/login');
-                }}
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Logout
-              </button>
+
+              {/* User Menu Dropdown */}
+              <div className="relative user-menu-container">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
+                    {username ? username.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white/25 backdrop-blur-sm rounded-lg border border-white/20 shadow-lg py-2 z-[100]">
+                    <Link
+                      href="/settings"
+                      className="block px-4 py-2 text-sm text-white hover:bg-white/20 transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('userType');
+                        setUsername('');
+                        router.push('/login');
+                        setShowUserMenu(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/20 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
