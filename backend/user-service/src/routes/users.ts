@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../utils/prisma';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
-import { validateBody, createUserSchema, updateUserPasswordSchema, updateUserAdminSchema } from '../utils/validation';
+import { validateBody, createUserSchema, updateUserPasswordSchema, updateUserByAdminSchema } from '../utils/validation';
 import { UserType } from '@prisma/client';
 import Joi from 'joi';
 
@@ -11,8 +11,25 @@ const router = express.Router();
 // Dynamic validation middleware for user updates
 const validateUserUpdate = (req: any, res: any, next: any) => {
   // This middleware runs after authenticateToken, so req.user should be available
+  const userId = parseInt(req.params.id);
+  const isUpdatingSelf = req.user && req.user.id === userId;
   const isAdmin = req.user && req.user.user_type === UserType.ADMIN;
-  const schema = isAdmin ? updateUserAdminSchema : updateUserPasswordSchema;
+
+  // Choose schema based on context:
+  // - User updating themselves: always use password schema (current_password + new_password)
+  // - Admin updating another user: use admin update schema (optional password + user_type)
+  // - Admin updating themselves: use password schema (same as regular users)
+  let schema;
+  if (isUpdatingSelf) {
+    // User updating their own password
+    schema = updateUserPasswordSchema;
+  } else if (isAdmin) {
+    // Admin updating another user
+    schema = updateUserByAdminSchema;
+  } else {
+    // Non-admin trying to update someone else (shouldn't happen due to permission checks)
+    schema = updateUserPasswordSchema;
+  }
 
   const { error } = schema.validate(req.body, { abortEarly: false });
 
@@ -125,7 +142,9 @@ router.patch('/:id', authenticateToken, validateUserUpdate, async (req, res) => 
       return res.status(403).json({ error: 'You can only update your own profile' });
     }
 
-    const { password, user_type } = req.body;
+    const { current_password, new_password, user_type } = req.body;
+    const isUpdatingSelf = req.user!.id === userId;
+    const isAdmin = req.user!.user_type === UserType.ADMIN;
 
     // Prevent admin from changing their own user_type if they are the last admin
     if (userId === req.user!.id && user_type !== undefined && req.user!.user_type === UserType.ADMIN) {
@@ -136,15 +155,21 @@ router.patch('/:id', authenticateToken, validateUserUpdate, async (req, res) => 
         return res.status(400).json({ error: 'Cannot change user type: you are the last admin' });
       }
     }
+
     const updateData: any = {};
 
-    // Hash new password if provided (this will always be present for regular users due to validation)
-    if (password) {
-      updateData.password_hash = await bcrypt.hash(password, 10);
+    // Handle password updates (only for self-updates)
+    if (isUpdatingSelf && current_password && new_password) {
+      // User updating their own password - requires current_password verification
+      const isPasswordValid = await bcrypt.compare(current_password, existingUser.password_hash);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Invalid current password' });
+      }
+      updateData.password_hash = await bcrypt.hash(new_password, 10);
     }
 
-    // user_type will only be present if user is admin (due to validation)
-    if (user_type !== undefined) {
+    // Handle user_type updates (only admins can do this)
+    if (user_type !== undefined && isAdmin) {
       updateData.user_type = user_type;
     }
 

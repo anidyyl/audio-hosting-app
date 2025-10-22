@@ -100,12 +100,22 @@ router.post('/', (req: Request, res: Response, next: any) => {
         // Extract metadata from the uploaded file
         const metadata = await extractAudioMetadata(file.path);
 
+        // Decode the original filename if it was URL-encoded
+        let decodedOriginalFilename: string;
+        try {
+          decodedOriginalFilename = decodeURIComponent(file.originalname);
+        } catch (error) {
+          // If decoding fails, use the original filename
+          console.warn('Failed to decode original filename, using encoded version:', file.originalname);
+          decodedOriginalFilename = file.originalname;
+        }
+
         // Save file information to database
         const audioFile = await prisma.userAudioFile.create({
           data: {
             user_id: userId,
             filename: file.filename,
-            original_filename: file.originalname,
+            original_filename: decodedOriginalFilename,
             file_path: file.path,
             file_size: BigInt(file.size),
             mime_type: file.mimetype,
@@ -139,7 +149,14 @@ router.post('/', (req: Request, res: Response, next: any) => {
           uploaded_at: audioFile.uploaded_at
         });
       } catch (fileError) {
-        console.error(`Error processing file ${file.originalname}:`, fileError);
+        // Decode filename for error logging
+        let errorFilename: string;
+        try {
+          errorFilename = decodeURIComponent(file.originalname);
+        } catch {
+          errorFilename = file.originalname;
+        }
+        console.error(`Error processing file ${errorFilename}:`, fileError);
         // Clean up the uploaded file if database insertion fails
         try {
           await fs.unlink(file.path);

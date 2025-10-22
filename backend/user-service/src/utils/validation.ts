@@ -54,37 +54,34 @@ export const createUserSchema = Joi.object({
     })
 });
 
-// Update user validation schema (for regular users - password only)
+// Update user password validation schema (for users updating their own password)
 export const updateUserPasswordSchema = Joi.object({
-  password: Joi.string()
+  current_password: Joi.string()
+    .required()
+    .messages({
+      'string.empty': 'Current password is required',
+      'any.required': 'Current password is required'
+    }),
+  new_password: Joi.string()
     .min(6)
     .required()
     .messages({
-      'string.empty': 'Password is required',
-      'string.min': 'Password must be at least 6 characters long',
-      'any.required': 'Password is required'
+      'string.empty': 'New password is required',
+      'string.min': 'New password must be at least 6 characters long',
+      'any.required': 'New password is required'
     })
 });
 
-// Update user validation schema (for admins - password and user_type)
-export const updateUserAdminSchema = Joi.object({
-  password: Joi.string()
-    .min(6)
-    .messages({
-      'string.min': 'Password must be at least 6 characters long'
-    }),
-
+// Update user validation schema (for admins updating other users - user_type only)
+export const updateUserByAdminSchema = Joi.object({
   user_type: Joi.string()
     .valid(UserType.USER, UserType.ADMIN)
+    .required()
     .messages({
-      'any.only': 'User type must be either USER or ADMIN'
+      'any.only': 'User type must be either USER or ADMIN',
+      'any.required': 'User type is required'
     })
-}).min(1).messages({
-  'object.min': 'At least one field must be provided for update'
 });
-
-// Legacy schema for backward compatibility (deprecated - use the specific schemas above)
-export const updateUserSchema = updateUserAdminSchema;
 
 // Middleware to validate request body
 export const validateBody = (schema: Joi.ObjectSchema) => {

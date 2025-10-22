@@ -36,9 +36,19 @@ export async function extractAudioMetadata(filePath: string): Promise<AudioMetad
 }
 
 export function generateUniqueFilename(originalFilename: string, userId: number): string {
+  // Decode the filename if it was URL-encoded by the frontend
+  let decodedFilename: string;
+  try {
+    decodedFilename = decodeURIComponent(originalFilename);
+  } catch (error) {
+    // If decoding fails, use the original filename
+    console.warn('Failed to decode filename, using original:', originalFilename);
+    decodedFilename = originalFilename;
+  }
+
   const timestamp = Date.now();
-  const extension = path.extname(originalFilename);
-  const basename = path.basename(originalFilename, extension);
+  const extension = path.extname(decodedFilename);
+  const basename = path.basename(decodedFilename, extension);
   return `${userId}_${timestamp}_${basename}${extension}`;
 }
 
