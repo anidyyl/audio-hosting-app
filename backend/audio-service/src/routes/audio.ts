@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
+import multer from 'multer';
 import { prisma } from '../utils/prisma';
 import { extractAudioMetadata } from '../utils/audioMetadata';
 import { uploadMultipleAudio } from '../utils/multer';
@@ -62,10 +63,31 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // POST /audio - Upload one or more audio files
-router.post('/', uploadMultipleAudio, async (req: Request, res: Response) => {
+router.post('/', (req: Request, res: Response, next: any) => {
+  uploadMultipleAudio(req, res, (err: any) => {
+    if (err) {
+      // Handle multer errors
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size is 100MB.' });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ error: 'Too many files. Maximum 10 files allowed.' });
+        }
+        return res.status(400).json({ error: 'File upload error: ' + err.message });
+      } else if (err.message && err.message.includes('Invalid file type')) {
+        // Handle file type validation errors
+        return res.status(400).json({ error: "Invalid file type" });
+      }
+      // Handle other errors
+      return res.status(500).json({ error: 'Upload failed: ' + err.message });
+    }
+    next();
+  });
+}, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as any[];
 
     if (!files || files.length === 0) {
       return res.status(400).json({ error: 'No audio files provided' });
