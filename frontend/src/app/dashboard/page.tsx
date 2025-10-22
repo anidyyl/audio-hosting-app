@@ -1,19 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface AudioFile {
   id: string;
-  filename: string;
-  title: string;
+  original_filename: string;
+  title?: string;
   artist?: string;
   album?: string;
-  duration?: string;
+  duration_seconds: string;
   size?: number;
-  uploadDate: string;
-  url: string;
 }
 
 export default function DashboardPage() {
@@ -23,35 +21,12 @@ export default function DashboardPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  // const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [username, setUsername] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    fetchAudioFiles();
-    // Load username from localStorage
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername) {
-      setUsername(storedUsername);
-    }
-  }, []);
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
-        setShowUserMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showUserMenu]);
-
-  const fetchAudioFiles = async () => {
+  const fetchAudioFiles = useCallback(async () => {
     try {
       setIsLoading(true);
       // TODO: Replace with actual API call
@@ -70,12 +45,35 @@ export default function DashboardPage() {
       } else {
         setError('Failed to load audio files');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchAudioFiles();
+    // Load username from localStorage
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, [fetchAudioFiles]);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu && !(event.target as Element).closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const formatDuration = (duration: string) => {
     const seconds = parseFloat(duration);
@@ -85,21 +83,17 @@ export default function DashboardPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatFileSize = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(1)} MB`;
-  };
 
   const openUploadModal = () => {
     setShowUploadModal(true);
     setSelectedFiles([]);
-    setUploadProgress({});
+    // setUploadProgress({});
   };
 
   const closeUploadModal = () => {
     setShowUploadModal(false);
     setSelectedFiles([]);
-    setUploadProgress({});
+    // setUploadProgress({});
   };
 
   const validateAudioFile = (file: File): boolean => {

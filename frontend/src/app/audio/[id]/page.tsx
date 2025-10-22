@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef, use, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -14,19 +14,12 @@ interface AudioMetadata {
   genre?: string;
   description?: string;
   tags?: string[];
-  duration: number;
-  size: number;
-  uploadDate: string;
-  url: string;
-  bitrate?: number;
-  sampleRate?: number;
-  channels?: number;
 }
 
 interface AudioPlayerPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
@@ -45,13 +38,7 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (resolvedParams?.id) {
-      fetchAudioData();
-    }
-  }, [resolvedParams?.id]);
-
-  const fetchAudioData = async () => {
+  const fetchAudioData = useCallback(async () => {
     if (!resolvedParams?.id) return;
 
     try {
@@ -73,12 +60,18 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
       } else {
         setError('Failed to load audio file');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [resolvedParams?.id, router]);
+
+  useEffect(() => {
+    if (resolvedParams?.id) {
+      fetchAudioData();
+    }
+  }, [resolvedParams?.id, fetchAudioData]);
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -125,10 +118,6 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatFileSize = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(1)} MB`;
-  };
 
   const startEditing = () => {
     if (audioData) {
@@ -171,12 +160,12 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to update audio details');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     }
   };
 
-  const updateEditData = (field: keyof AudioMetadata, value: any) => {
+  const updateEditData = (field: keyof AudioMetadata, value: string | string[] | undefined) => {
     setEditData(prev => ({
       ...prev,
       [field]: value
@@ -220,7 +209,7 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to delete audio file');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setShowDeleteModal(false);
@@ -542,7 +531,7 @@ export default function AudioPlayerPage({ params }: AudioPlayerPageProps) {
               <div className="text-4xl mb-4">⚠️</div>
               <h3 className="text-xl font-bold text-white mb-2">Delete Audio File</h3>
               <p className="text-gray-300 mb-6">
-                Are you sure you want to delete <span className="font-semibold text-white">"{audioData?.title || audioData?.original_filename}"</span>?
+                Are you sure you want to delete <span className="font-semibold text-white">&quot;{audioData?.title || audioData?.original_filename}&quot;</span>?
                 This action cannot be undone.
               </p>
 
