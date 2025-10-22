@@ -76,7 +76,9 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_USER_SERVICE_URL=/api/users
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/api/auth
       - NEXT_PUBLIC_AUDIO_SERVICE_URL=/api/audio
+      - NEXT_PUBLIC_AUDIO_FILE_URL=/uploads/audio
     volumes:
       - ./frontend:/app
       - /app/node_modules
