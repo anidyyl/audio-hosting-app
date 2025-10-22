@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 interface User {
   id: number;
@@ -36,7 +35,6 @@ export default function SettingsPage() {
     user_type: 'USER' as 'ADMIN' | 'USER'
   });
 
-  const router = useRouter();
 
   useEffect(() => {
     // Load user type and ID from localStorage
@@ -66,8 +64,8 @@ export default function SettingsPage() {
         const usersData = await response.json();
         setUsers(usersData.users);
       }
-    } catch (error) {
-      console.error('Error fetching users:', error);
+    } catch {
+      console.error('Error fetching users');
     }
   };
 
@@ -109,7 +107,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         setPasswordError(errorData.message || 'Failed to change password');
       }
-    } catch (error) {
+    } catch {
       setPasswordError('Network error. Please try again.');
     }
   };
@@ -136,7 +134,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to add user');
       }
-    } catch (error) {
+    } catch {
       alert('Network error. Please try again.');
     }
   };
@@ -165,7 +163,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to update user');
       }
-    } catch (error) {
+    } catch {
       alert('Network error. Please try again.');
     }
   };
@@ -194,7 +192,7 @@ export default function SettingsPage() {
         const errorData = await response.json();
         alert(errorData.message || 'Failed to delete user');
       }
-    } catch (error) {
+    } catch {
       alert('Network error. Please try again.');
     }
   };
@@ -503,7 +501,7 @@ export default function SettingsPage() {
               <div className="text-4xl mb-4">⚠️</div>
               <h3 className="text-xl font-bold text-white mb-2">Delete User</h3>
               <p className="text-gray-300 mb-6">
-                Are you sure you want to delete <span className="font-semibold text-white">"{userToDelete.username}"</span>?
+                Are you sure you want to delete <span className="font-semibold text-white">&quot;{userToDelete.username}&quot;</span>?
                 This action cannot be undone.
               </p>
 
