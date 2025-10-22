@@ -30,10 +30,13 @@ services:
 
   # User Service
   user-service:
-    build: ./backend/user-service
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile.prod
     container_name: user-service
+    restart: unless-stopped
     environment:
-      - NODE_ENV=development
+      - NODE_ENV= production
       - PORT=8001
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=user_service
       - REDIS_URL=redis://redis:6379
@@ -43,17 +46,17 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend/user-service:/app
-      - /app/node_modules
-    command: sh -c "npm run prisma:setup:with-seed && npm run dev"
+    command: sh -c "npm run prisma:setup:with-seed && npm start"
 
   # Audio Service
   audio-service:
-    build: ./backend/audio-service
+    build:
+      context: ./backend/audio-service
+      dockerfile: Dockerfile.prod
     container_name: audio-service
+    restart: unless-stopped
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=8002
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=audio_service
       - REDIS_URL=redis://redis:6379
@@ -65,31 +68,28 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend/audio-service:/app
-      - /app/node_modules
       - uploads_data:/app/uploads
-    command: sh -c "npm run prisma:setup && npm run dev"
+    command: sh -c "npm run prisma:setup && npm start"
 
   # Next.js Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_USER_SERVICE_URL=/api/users
+        - NEXT_PUBLIC_AUTH_SERVICE_URL=/api/auth
+        - NEXT_PUBLIC_AUDIO_SERVICE_URL=/api/audio
+        - NEXT_PUBLIC_AUDIO_FILE_URL=/uploads/audio
     container_name: frontend
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_USER_SERVICE_URL=/api/users
-      - NEXT_PUBLIC_AUTH_SERVICE_URL=/api/auth
-      - NEXT_PUBLIC_AUDIO_SERVICE_URL=/api/audio
-      - NEXT_PUBLIC_AUDIO_FILE_URL=/uploads/audio
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
+    restart: unless-stopped
+    command: npm start
 
   # Caddy Reverse Proxy
   caddy:
     image: caddy:2-alpine
     container_name: caddy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -98,20 +98,6 @@ services:
       - uploads_data:/app/uploads
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - frontend
-      - user-service
-      - audio-service
-
-  # web-based database management tool. For development purposes.
-  adminer:
-    image: adminer
-    container_name: adminer
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
 
 volumes:
   postgres_data:
