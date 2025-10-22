@@ -4,7 +4,7 @@ A full-stack audio hosting application built with Next.js, Express.js microservi
 
 ## Architecture
 
-- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
+- **Frontend**: Next.js with TypeScript and Tailwind CSS
 - **Backend**: Express.js microservices architecture
   - User Service: Handles user authentication and management
   - Audio Service: Handles audio file uploads, storage, and metadata
