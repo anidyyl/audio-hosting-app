@@ -122,6 +122,11 @@ You need to create `.env` file by copying the `.env.example` file
    - Audio Service API: http://localhost/api/audio
    - Adminer (Database management): http://localhost:8080
 
+4. **Default Login Credentials**
+   - **Username**: `admin`
+   - **Password**: `password`
+   - **Note**: These credentials are automatically created during the initial database seeding
+
 
 ### Run Production build
 ```bash
